@@ -6,6 +6,10 @@ export default function ChatInterface() {
   const [structured, setStructured] = useState(null);
   const [matchedImage, setMatchedImage] = useState(null);
   const [error, setError] = useState('');
+  const [followUpQuestion, setFollowUpQuestion] = useState('');
+  const [followUpAnswer, setFollowUpAnswer] = useState('');
+  const [showFollowUp, setShowFollowUp] = useState(false);
+  const [promptId, setPromptId] = useState(null);
 
   const sendPrompt = async () => {
     if (!message.trim()) {
@@ -13,16 +17,22 @@ export default function ChatInterface() {
       return;
     }
     setError('');
+    setShowFollowUp(false);
+    setMatchedImage(null);
 
     try {
       const res = await axios.post('http://localhost:5001/api/prompt/report', {
-        promptText: message
+        promptText: message,
       });
 
       setStructured(res.data.structured);
       setMessage('');
 
-      if (res.data.match) {
+      if (res.data.followUpRequired) {
+        setFollowUpQuestion(res.data.followUpQuestion);
+        setPromptId(res.data.id);
+        setShowFollowUp(true);
+      } else if (res.data.match) {
         setMatchedImage(res.data.match);
       } else {
         setMatchedImage(null);
@@ -33,10 +43,35 @@ export default function ChatInterface() {
     }
   };
 
+  const submitFollowUp = async () => {
+    if (!followUpAnswer.trim()) return;
+
+    try {
+      const res = await axios.post('http://localhost:5001/api/prompt/reanalyze', {
+        promptId,
+        additionalAnswer: followUpAnswer,
+      });
+
+      if (res.data.match) {
+        setMatchedImage(res.data.match);
+        setShowFollowUp(false);
+        setFollowUpAnswer('');
+      } else {
+        setMatchedImage(null);
+        setShowFollowUp(false);
+      }
+    } catch (err) {
+      console.error('❌ Follow-up error:', err);
+      setError('❌ Follow-up failed. Try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black text-green-400 font-mono px-4 py-8">
       <div className="max-w-4xl mx-auto">
-        <h2 className="text-3xl font-extrabold mb-6 text-neonGreen drop-shadow-neon">🎮 Lost & Found AI Assistant</h2>
+        <h2 className="text-3xl font-extrabold mb-6 text-neonGreen drop-shadow-neon">
+          🎮 Lost & Found AI Assistant
+        </h2>
 
         <textarea
           value={message}
@@ -64,6 +99,26 @@ export default function ChatInterface() {
           </div>
         )}
 
+        {/* ❓ Follow-up Question */}
+        {showFollowUp && (
+          <div className="mt-6 border border-yellow-600 p-4 rounded bg-[#111] text-yellow-400 shadow-md">
+            <h3 className="text-lg font-bold mb-2">🧐 Follow-up Question:</h3>
+            <p className="mb-3">{followUpQuestion}</p>
+            <textarea
+              value={followUpAnswer}
+              onChange={(e) => setFollowUpAnswer(e.target.value)}
+              placeholder="Your answer..."
+              className="w-full border border-yellow-400 bg-black text-yellow-200 p-3 rounded mb-2"
+            />
+            <button
+              onClick={submitFollowUp}
+              className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 transition"
+            >
+              Submit Follow-up Answer
+            </button>
+          </div>
+        )}
+
         {/* ✅ Best Match Result from Images */}
         {matchedImage && (
           <div className="mt-6 border border-green-700 p-4 rounded bg-[#0a0a0a] shadow-md">
@@ -82,14 +137,13 @@ export default function ChatInterface() {
               />
             </div>
 
-            {/* 📝 Descriptive Caption */}
-            {matchedImage.description && (
+            {/* 📝 Description */}
+            {matchedImage.imageDescription && (
               <div className="mt-4 bg-black border border-green-500 p-3 rounded">
                 <h4 className="text-sm font-semibold text-green-400 mb-1">📝 Description:</h4>
-                <pre className="text-xs text-green-200 whitespace-pre-wrap overflow-x-auto">
-                {JSON.stringify(matchedImage.imageDescription, null, 2)}
-              </pre>
-               
+                <p className="text-xs text-green-200 whitespace-pre-wrap">
+                  {matchedImage.imageDescription}
+                </p>
               </div>
             )}
 
