@@ -1,5 +1,7 @@
 import PromptModel from '../models/promptModel.js';
+import ImagePromptModel from '../models/imagePromptModel.js';
 import openai from '../config/openaiConfig.js';
+import { calculateMatchScore } from '../services/comparePrompts.js';
 
 export const handlePromptSubmit = async (req, res) => {
   const { promptText } = req.body;
@@ -50,20 +52,45 @@ If any information is missing, leave it blank or an empty array.
 
     console.log("📦 Saved to MongoDB:", savedPrompt);
 
-    // 4️⃣ Fetch from DB to confirm it's stored
-    const fetched = await PromptModel.findById(savedPrompt._id);
-    console.log("🔁 Fetched from DB:", fetched);
+    // 4️⃣ Match against stored image prompts
+    const allImages = await ImagePromptModel.find();
+    let bestMatch = null;
+    let bestScore = 0;
 
+    for (const image of allImages) {
+      const score = calculateMatchScore(structured, image.structured);
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = image;
+      }
+    }
+
+
+
+    if (bestMatch) {
+      console.log("🎯 Best Match Found:");
+      console.log("📷 Filename:", bestMatch.filename);
+      console.log("🧠 Structured JSON:", JSON.stringify(bestMatch.structured, null, 2));
+    } else {
+      console.log("❌ No match found in image prompts.");
+    }
+
+    // 5️⃣ Send response back to frontend
     return res.status(200).json({
-      id: fetched._id,
-      raw: fetched.promptText,
+      id: savedPrompt._id,
+      raw: savedPrompt.promptText,
       structured: {
-        type: fetched.type,
-        brand: fetched.brand,
-        color: fetched.color,
-        features: fetched.features,
-        details: fetched.details,
+        type: savedPrompt.type,
+        brand: savedPrompt.brand,
+        color: savedPrompt.color,
+        features: savedPrompt.features,
+        details: savedPrompt.details,
       },
+      match: bestMatch ? {
+        imageUrl: `/api/uploads/${bestMatch.filename}`,
+        imageJson: bestMatch.structured,
+        matchScore: bestScore,
+      } : null
     });
   } catch (err) {
     console.error("❌ Server error:", err.message);

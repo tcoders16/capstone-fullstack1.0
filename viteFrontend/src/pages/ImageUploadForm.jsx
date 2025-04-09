@@ -26,21 +26,30 @@ export default function ImageUploadForm() {
   };
 
   return (
-    <div className="p-6 max-w-xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4">Upload Found Item Image</h2>
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => setImage(e.target.files[0])}
-        className="mb-4"
-      />
-      <button
-        onClick={handleSubmit}
-        className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-      >
-        Upload Image
-      </button>
-      {status && <p className="mt-4 text-blue-700">{status}</p>}
+    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center font-mono px-6">
+      <h2 className="text-4xl font-bold mb-6 text-neonGreen drop-shadow-neon text-center">
+        🖼️ Upload Found Item
+      </h2>
+
+      <div className="bg-gray-900 p-6 rounded-lg shadow-lg w-full max-w-md">
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => setImage(e.target.files[0])}
+          className="w-full mb-4 text-white file:bg-neonGreen file:text-black file:px-4 file:py-2 file:rounded file:border-none file:cursor-pointer"
+        />
+
+        <button
+          onClick={handleSubmit}
+          className="w-full bg-gradient-to-r from-green-400 to-lime-500 hover:from-lime-500 hover:to-green-400 text-black font-semibold py-2 px-6 rounded drop-shadow-neon transition-all duration-300"
+        >
+          🚀 Upload Image
+        </button>
+
+        {status && (
+          <p className="mt-4 text-sm text-center text-neonGreen drop-shadow-neon">{status}</p>
+        )}
+      </div>
     </div>
   );
 }
