@@ -34,7 +34,7 @@ export default function ChatInterface() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-green-400 font-mono px-4 py-8 ">
+    <div className="min-h-screen bg-black text-green-400 font-mono px-4 py-8">
       <div className="max-w-4xl mx-auto">
         <h2 className="text-3xl font-extrabold mb-6 text-neonGreen drop-shadow-neon">🎮 Lost & Found AI Assistant</h2>
 
@@ -82,11 +82,22 @@ export default function ChatInterface() {
               />
             </div>
 
-            {/* Matched Image Structured JSON */}
+            {/* 📝 Descriptive Caption */}
+            {matchedImage.description && (
+              <div className="mt-4 bg-black border border-green-500 p-3 rounded">
+                <h4 className="text-sm font-semibold text-green-400 mb-1">📝 Description:</h4>
+                <pre className="text-xs text-green-200 whitespace-pre-wrap overflow-x-auto">
+                {JSON.stringify(matchedImage.imageDescription, null, 2)}
+              </pre>
+               
+              </div>
+            )}
+
+            {/* 🧠 Matched Structured JSON */}
             <div className="bg-black border border-green-500 mt-4 p-3 rounded">
               <h4 className="text-sm font-semibold text-green-400 mb-1">🧠 Structured Data:</h4>
               <pre className="text-xs text-green-200 whitespace-pre-wrap overflow-x-auto">
-                {JSON.stringify(matchedImage.structured, null, 2)}
+                {JSON.stringify(matchedImage.imageJson, null, 2)}
               </pre>
             </div>
           </div>

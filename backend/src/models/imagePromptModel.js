@@ -1,4 +1,3 @@
-// ✅ backend/src/models/imagePromptModel.js
 import mongoose from 'mongoose';
 
 const imagePromptSchema = new mongoose.Schema({
@@ -14,11 +13,22 @@ const imagePromptSchema = new mongoose.Schema({
     type: [String],
     default: [],
   },
+  description: {
+    type: String,
+    default: 'No description provided.',
+  },
+  location: {
+    type: String,
+    default: 'Unknown location',
+  },
+  postedBy: {
+    type: String,
+    default: 'Unknown authority',
+  }
 }, {
-  timestamps: true,
+  timestamps: true, // adds createdAt and updatedAt
 });
 
-// ✅ Define THEN export
-const imagePromptModel = mongoose.model('ImagePrompt', imagePromptSchema);
+const ImagePromptModel = mongoose.model('ImagePrompt', imagePromptSchema);
 
-export default imagePromptModel;
+export default ImagePromptModel;

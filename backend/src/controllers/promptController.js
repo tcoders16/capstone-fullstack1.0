@@ -15,7 +15,7 @@ export const handlePromptSubmit = async (req, res) => {
   try {
     // 🧠 1. Ask GPT to extract structured info
     const gptResponse = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'user',
@@ -24,7 +24,7 @@ You are a lost & found assistant.
 
 Analyze this user prompt: "${promptText}"
 
-Extract and return a JSON object with the following:
+Extract and return only the following JSON format:
 {
   "type": "",
   "brand": "",
@@ -32,7 +32,7 @@ Extract and return a JSON object with the following:
   "features": [],
   "details": []
 }
-If any information is missing, leave it blank or an empty array.
+Do not include any explanation.
           `,
         },
       ],
@@ -40,19 +40,24 @@ If any information is missing, leave it blank or an empty array.
       max_tokens: 200,
     });
 
-    // 2️⃣ Parse structured output from GPT
-    const structured = JSON.parse(gptResponse.choices[0].message.content);
+    // ✅ Clean and extract JSON from GPT response
+    const rawContent = gptResponse.choices[0].message.content;
+    console.log("📩 Raw GPT response:", rawContent);
+
+    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("No valid JSON found in GPT response");
+
+    const structured = JSON.parse(jsonMatch[0]);
     console.log("🧠 Structured JSON from GPT:", structured);
 
-    // 3️⃣ Save full object to MongoDB
+    // 💾 Save to MongoDB
     const savedPrompt = await PromptModel.create({
       promptText,
       ...structured,
     });
-
     console.log("📦 Saved to MongoDB:", savedPrompt);
 
-    // 4️⃣ Match against stored image prompts
+    // 🔍 Match against image prompts
     const allImages = await ImagePromptModel.find();
     let bestMatch = null;
     let bestScore = 0;
@@ -65,8 +70,6 @@ If any information is missing, leave it blank or an empty array.
       }
     }
 
-
-
     if (bestMatch) {
       console.log("🎯 Best Match Found:");
       console.log("📷 Filename:", bestMatch.filename);
@@ -75,7 +78,7 @@ If any information is missing, leave it blank or an empty array.
       console.log("❌ No match found in image prompts.");
     }
 
-    // 5️⃣ Send response back to frontend
+    // ✅ Final structured response
     return res.status(200).json({
       id: savedPrompt._id,
       raw: savedPrompt.promptText,
@@ -90,8 +93,13 @@ If any information is missing, leave it blank or an empty array.
         imageUrl: `/api/uploads/${bestMatch.filename}`,
         imageJson: bestMatch.structured,
         matchScore: bestScore,
+        description: bestMatch.description || "No description provided.",
+        location: bestMatch.location || "Unknown location",
+        postedBy: bestMatch.postedBy || "Unknown authority",
+        postedAt: bestMatch.createdAt,
       } : null
     });
+
   } catch (err) {
     console.error("❌ Server error:", err.message);
     return res.status(500).json({ error: 'Server error' });

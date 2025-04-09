@@ -25,15 +25,16 @@ export const handleImageUpload = async (req, res) => {
               type: "text",
               text: `
 Please analyze this image and identify the object.
-Extract and return only a valid JSON object in this format:
+Extract and return a very very descriptive description first and then follow up will be a valid JSON object in this format:
 {
+  "description": "",
   "type": "",
   "brand": "",
   "color": "",
   "features": [],
   "details": []
 }
-DO NOT include any explanations. Only JSON output.
+Only return the description first, followed by JSON — clearly separated.
               `,
             },
             {
